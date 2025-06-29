@@ -60,6 +60,10 @@ func (n NameToIp) toIpV4(name string) net.IP {
 	for _, origin := range n.Origins {
 		if strings.HasSuffix(name, origin) {
 			rootZone = origin
+			// If the request is the same as the origin, we don't handle it
+			if name == origin {
+				return nil
+			}
 			break
 		}
 	}

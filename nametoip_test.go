@@ -84,6 +84,7 @@ func TestNameToIp_ServeDNS_FallthroughHostnames(t *testing.T) {
 		{"public-ips-ignored-1.2.3.4.example.com.", dns.TypeA},
 		{"non-word-boundary-0a0a0a070707.example.com.", dns.TypeA},
 		{"non-a-records-192.168.1.1.example.com.", dns.TypeTXT},
+		{"example.com.", dns.TypeA},
 	}
 	for _, tt := range tests {
 		t.Run(tt.query, func(t *testing.T) {
