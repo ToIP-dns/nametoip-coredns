@@ -1,4 +1,4 @@
-module github.com/ToIP-dns/nameipto-coredns
+module github.com/ToIP-dns/nametoip-coredns
 
 go 1.24.2
 
