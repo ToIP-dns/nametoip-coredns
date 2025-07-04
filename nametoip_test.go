@@ -116,13 +116,14 @@ func TestNameToIp_ServeDNS_StatsEndpoint(t *testing.T) {
 	// Request statistics
 	statsRequest := new(dns.Msg)
 	statsRequest.SetQuestion("_stats.example.com.", dns.TypeTXT)
+	_, _ = n.ServeDNS(context.TODO(), rec, statsRequest) // Generate one additional total reponse
 	_, err := n.ServeDNS(context.TODO(), rec, statsRequest)
 
 	if err != nil {
 		t.Errorf("ServeDNS() error = %v", err)
 	}
 	responseTxt := rec.Msg.Answer[0].(*dns.TXT).Txt[0]
-	if responseTxt != "{\"total_requests\":3,\"total_response\":2,\"total_response_a\":2}" {
+	if responseTxt != "{\"total_requests\":4,\"total_response\":3,\"total_response_a\":2}" {
 		t.Errorf("ServeDNS() unexpected response. Got %v", responseTxt)
 	}
 }

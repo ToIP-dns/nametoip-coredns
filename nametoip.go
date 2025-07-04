@@ -100,7 +100,7 @@ func (n NameToIp) handleTxtRecord(ctx context.Context, writer dns.ResponseWriter
 	stats := dnsStats{
 		TotalRequest:   n.totalRequests.Load(),
 		TotalResponse:  n.totalResponse.Load(),
-		TotalResponseA: n.totalResponse.Load(),
+		TotalResponseA: n.totalResponseA.Load(),
 	}
 
 	marshal, err := json.Marshal(stats)
