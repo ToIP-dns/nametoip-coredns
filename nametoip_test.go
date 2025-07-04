@@ -8,11 +8,6 @@ import (
 	"testing"
 )
 
-const (
-	ShouldHandle int = 1 << iota
-	ShouldFallthrough
-)
-
 const ErrIndicatingFallthrough = `plugin/nametoip: no next plugin found`
 
 func TestNameToIp_ServeDNS_ParseableHostnames(t *testing.T) {
@@ -38,11 +33,11 @@ func TestNameToIp_ServeDNS_ParseableHostnames(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.query, func(t *testing.T) {
-			n := NameToIp{Origins: []string{"example.com."}}
 			req := new(dns.Msg)
 			req.SetQuestion(tt.query, tt.queryType)
 			rec := dnstest.NewRecorder(&test.ResponseWriter{})
 
+			n := newNameToIp(nil, []string{"example.com."})
 			got, err := n.ServeDNS(context.TODO(), rec, req)
 			// No errors
 			if err != nil {
@@ -88,11 +83,11 @@ func TestNameToIp_ServeDNS_FallthroughHostnames(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.query, func(t *testing.T) {
-			n := NameToIp{Origins: []string{"example.com."}}
 			req := new(dns.Msg)
 			req.SetQuestion(tt.query, tt.queryType)
 			rec := dnstest.NewRecorder(&test.ResponseWriter{})
 
+			n := newNameToIp(nil, []string{"example.com."})
 			_, err := n.ServeDNS(context.TODO(), rec, req)
 			// No errors
 			if err != nil {
@@ -106,5 +101,28 @@ func TestNameToIp_ServeDNS_FallthroughHostnames(t *testing.T) {
 			}
 			t.Errorf("Expected query to fallthrough but it did not")
 		})
+	}
+}
+
+func TestNameToIp_ServeDNS_StatsEndpoint(t *testing.T) {
+	rec := dnstest.NewRecorder(&test.ResponseWriter{})
+	n := newNameToIp(nil, []string{"example.com."})
+
+	// Create some statistics
+	aRequest := new(dns.Msg)
+	aRequest.SetQuestion("10.2.3.4.example.com.", dns.TypeA)
+	_, _ = n.ServeDNS(context.TODO(), rec, aRequest)
+	_, _ = n.ServeDNS(context.TODO(), rec, aRequest)
+	// Request statistics
+	statsRequest := new(dns.Msg)
+	statsRequest.SetQuestion("_stats.example.com.", dns.TypeTXT)
+	_, err := n.ServeDNS(context.TODO(), rec, statsRequest)
+
+	if err != nil {
+		t.Errorf("ServeDNS() error = %v", err)
+	}
+	responseTxt := rec.Msg.Answer[0].(*dns.TXT).Txt[0]
+	if responseTxt != "{\"total_requests\":3,\"total_response\":2,\"total_response_a\":2}" {
+		t.Errorf("ServeDNS() unexpected response. Got %v", responseTxt)
 	}
 }
