@@ -3,7 +3,7 @@ module github.com/ToIP-dns/nametoip-coredns
 go 1.24.2
 
 require (
-	github.com/coredns/caddy v1.1.2-0.20241029205200-8de985351a98
+	github.com/coredns/caddy/v2 v2.1.1
 	github.com/coredns/coredns v1.12.2
 	github.com/miekg/dns v1.1.66
 )
