@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -e
+GIT_COMMITS=$(git rev-list --count HEAD)
+RELEASE_VERSION="v0.1.${GIT_COMMITS}"
+
+echo "Tagging release $RELEASE_VERSION"
+git tag $RELEASE_VERSION
+git push origin $RELEASE_VERSION
