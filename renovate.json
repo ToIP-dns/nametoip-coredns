@@ -7,7 +7,8 @@
     {
       "matchManagers": ["gomod"],
       "matchPackageNames": [
-        "github.com/coredns/caddy"
+        "github.com/coredns/caddy",
+        "github.com/miekg/dns"
       ],
       "enabled": false
     }
