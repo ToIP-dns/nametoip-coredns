@@ -16,10 +16,11 @@ import (
 
 //var log = clog.NewWithPlugin("nametoip")
 
-func newNameToIp(next plugin.Handler, origins []string) NameToIp {
+func newNameToIp(next plugin.Handler, origins []string, vanityName map[string]int) NameToIp {
 	return NameToIp{
 		Next:           next,
 		Origins:        origins,
+		VanityName:     vanityName,
 		totalRequests:  &atomic.Int64{},
 		totalResponse:  &atomic.Int64{},
 		totalResponseA: &atomic.Int64{},
@@ -29,6 +30,7 @@ func newNameToIp(next plugin.Handler, origins []string) NameToIp {
 type NameToIp struct {
 	Next           plugin.Handler
 	Origins        []string
+	VanityName     map[string]int
 	totalRequests  *atomic.Int64
 	totalResponse  *atomic.Int64
 	totalResponseA *atomic.Int64
@@ -163,7 +165,7 @@ func (n NameToIp) toIpV4(name string) net.IP {
 	if localName == "" {
 		return nil
 	}
-	ipAsString := findIpInHostname(localName)
+	ipAsString := n.findIpInHostname(localName)
 	// Check if we got an IP out of the different regex methods
 	if ipAsString == "" {
 		return nil
@@ -185,8 +187,9 @@ func (n NameToIp) toIpV4(name string) net.IP {
 var regexIpDot = regexp.MustCompile(`\b(?:\d{1,3}\.){3}\d{1,3}\b$`)
 var regexIpDash = regexp.MustCompile(`\b(?:\d{1,3}-){3}\d{1,3}\b$`)
 var regexIpAsHex = regexp.MustCompile(`\b[a-fA-F0-9]{8}\b$`)
+var regexIpCvcvc = regexp.MustCompile(`(?i)\b[bcdfghjklmnpqrstvwxyz][aeiou][bcdfghjklmnpqrstvwxyz][aeiou][bcdfghjklmnpqrstvwxyz]\b$`)
 
-func findIpInHostname(hostname string) string {
+func (n NameToIp) findIpInHostname(hostname string) string {
 	// . encoding
 	var ipAsString = regexIpDot.FindString(hostname)
 	if ipAsString != "" {
@@ -208,6 +211,22 @@ func findIpInHostname(hostname string) string {
 		}
 		// A little wasteful encoding back into a string, but it doesn't feel as common code path
 		return fmt.Sprintf("%d.%d.%d.%d", ipBytes[0], ipBytes[1], ipBytes[2], ipBytes[3])
+	}
+
+	// CVCVC encoding
+	ipCvcvc := regexIpCvcvc.FindString(hostname)
+	if ipCvcvc != "" {
+		ipAddrOffset, ok := n.VanityName[ipCvcvc]
+		if !ok {
+			// Not found in vanity name
+			return ""
+		}
+		// We shouldn't have an address higher that 2^16, even if we load them in the vanity names
+		if ipAddrOffset > 65535 {
+			return ""
+		}
+		return fmt.Sprintf("192.168.%d.%d", (ipAddrOffset&0x0000FF00)>>8, ipAddrOffset&0x000000FF)
+
 	}
 	return ""
 }

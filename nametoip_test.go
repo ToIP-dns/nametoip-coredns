@@ -10,6 +10,12 @@ import (
 
 const ErrIndicatingFallthrough = `plugin/nametoip: no next plugin found`
 
+var vanityNames = map[string]int{
+	"kumil": 0,
+	"nacog": 1,
+	"qudis": 734,
+}
+
 func TestNameToIp_ServeDNS_ParseableHostnames(t *testing.T) {
 	tests := []struct {
 		query     string
@@ -30,6 +36,9 @@ func TestNameToIp_ServeDNS_ParseableHostnames(t *testing.T) {
 		{"class-b-private.172.17.55.11.example.com.", dns.TypeA, "172.17.55.11"},
 		{"class-b-private.10.3.4.5.example.com.", dns.TypeA, "10.3.4.5"},
 		{"loopback-private.127.1.2.3.example.com.", dns.TypeA, "127.1.2.3"},
+		{"kumil.example.com.", dns.TypeA, "192.168.0.0"},
+		{"qudis.example.com.", dns.TypeA, "192.168.2.222"},
+		{"my-prefix.kumil.example.com.", dns.TypeA, "192.168.0.0"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.query, func(t *testing.T) {
@@ -37,7 +46,7 @@ func TestNameToIp_ServeDNS_ParseableHostnames(t *testing.T) {
 			req.SetQuestion(tt.query, tt.queryType)
 			rec := dnstest.NewRecorder(&test.ResponseWriter{})
 
-			n := newNameToIp(nil, []string{"example.com."})
+			n := newNameToIp(nil, []string{"example.com."}, vanityNames)
 			got, err := n.ServeDNS(context.TODO(), rec, req)
 			// No errors
 			if err != nil {
@@ -87,7 +96,7 @@ func TestNameToIp_ServeDNS_FallthroughHostnames(t *testing.T) {
 			req.SetQuestion(tt.query, tt.queryType)
 			rec := dnstest.NewRecorder(&test.ResponseWriter{})
 
-			n := newNameToIp(nil, []string{"example.com."})
+			n := newNameToIp(nil, []string{"example.com."}, vanityNames)
 			_, err := n.ServeDNS(context.TODO(), rec, req)
 			// No errors
 			if err != nil {
@@ -106,7 +115,7 @@ func TestNameToIp_ServeDNS_FallthroughHostnames(t *testing.T) {
 
 func TestNameToIp_ServeDNS_StatsEndpoint(t *testing.T) {
 	rec := dnstest.NewRecorder(&test.ResponseWriter{})
-	n := newNameToIp(nil, []string{"example.com."})
+	n := newNameToIp(nil, []string{"example.com."}, nil)
 
 	// Create some statistics
 	aRequest := new(dns.Msg)

@@ -1,0 +1,5 @@
+example.com.:25353 {
+    nametoip {
+        vanity_name_file test-vanity-names.txt
+    }
+}
