@@ -22,7 +22,7 @@ jobs:
         fetch-depth: '0' # We use the git commits for the version number
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
 
     - name: Build
       run: go build -v ./...
